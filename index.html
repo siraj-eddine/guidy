@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>GUIDY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(160deg,#2FA4B9,#FFF6D1,#E4F3E8)
+}
+header{
+  background:#FFF6D1;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+header img{height:45px}
+header button,header select{
+  padding:6px 10px;
+  border:none;
+  border-radius:8px;
+  background:#2FA4B9;
+  color:white;
+  margin:2px;
+  cursor:pointer
+}
+#dropdown{
+  display:none;
+  position:absolute;
+  top:65px;
+  right:10px;
+  background:white;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.2);
+  z-index:10
+}
+#dropdown button{
+  display:block;
+  width:100%;
+  padding:12px;
+  border:none;
+  background:none;
+  text-align:right;
+  cursor:pointer
+}
+section{display:none;padding:15px}
+.active{display:block}
+.main-btn{
+  padding:15px;
+  margin:10px;
+  width:90%;
+  font-size:16px;
+  border:none;
+  border-radius:15px;
+  background:#2FA4B9;
+  color:white
+}
+.card{
+  background:white;
+  padding:15px;
+  margin:10px 0;
+  border-radius:12px
+}
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6)
+}
+.modal-content{
+  background:white;
+  padding:15px;
+  margin:60px auto;
+  width:320px;
+  border-radius:12px
+}
+small{color:#555}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="logo.png" alt="GUIDY">
+  <div>
+    <button onclick="home()" id="btnHome">🏠</button>
+    <button onclick="toggleMenu()" id="btnMenu">☰</button>
+    <select onchange="setLang(this.value)">
+      <option value="ar">AR</option>
+      <option value="fr">FR</option>
+      <option value="en">EN</option>
+    </select>
+    <button onclick="openLogin()" id="btnLogin">🔐</button>
+    <button onclick="openSub()" id="btnSub">⭐</button>
+  </div>
+</header>
+
+
+<div id="dropdown">
+  <button onclick="showSection('hotels')">🏨 <span data-t="hotels">فنادق</span></button>
+  <button onclick="showSection('restaurants')">🍴 <span data-t="restaurants">مطاعم</span></button>
+  <button onclick="showSection('landmarks')">📍 <span data-t="landmarks">معالم</span></button>
+</div>
+
+<section id="home" class="active">
+  <button class="main-btn" onclick="openFile()">📁 <span data-t="upload">تحميل صورة</span></button>
+  <button class="main-btn" onclick="openFile()">📷 <span data-t="scan">مسح بالكاميرا</span></button>
+  <input type="file" id="file" accept="image/*" hidden onchange="analyze(this)">
+  <img id="preview" style="max-width:90%;display:none">
+  <div id="result" class="card"></div>
+  <button onclick="speak()">🔊 <span data-t="listen">استمع</span></button>
+</section>
+
+<section id="hotels">
+  <h3 data-t="hotelsSkikda">فنادق سكيكدة (حسب القرب)</h3>
+
+  <div class="card">
+    <b>Hotel Tulip Skikda</b><br>
+    ⭐ 4.1 / 5<br>
+    <small data-t="tulipDesc">
+      فندق عصري مطل على البحر، خدمات راقية وقريب من وسط المدينة.
+    </small><br><br>
+    <button onclick="map(36.8765,6.9053)">📍 <span data-t="route">خارطة الطريق</span></button>
+  </div>
+
+  <div class="card">
+    <b>Hôtel Safir Skikda</b><br>
+    ⭐ 3.8 / 5<br>
+    <small data-t="safirDesc">
+      فندق مريح بأسعار مناسبة وقريب من الميناء.
+    </small><br><br>
+    <button onclick="map(36.8792,6.9071)">📍 <span data-t="route">خارطة الطريق</span></button>
+  </div>
+</section>
+
+<section id="restaurants">
+  <h3 data-t="restaurantsSkikda">مطاعم سكيكدة (حسب القرب)</h3>
+
+  <div class="card">
+    <b>Le Corsaire</b><br>
+    🍽️ <span data-t="seafood">مأكولات بحرية</span><br>
+    ⭐ 4.3 / 5<br>
+    <small data-t="corsaireDesc">
+      مطعم مشهور بالأسماك الطازجة وإطلالة بحرية.
+    </small><br><br>
+    <button onclick="map(36.8781,6.9044)">📍 <span data-t="route">خارطة الطريق</span></button>
+  </div>
+
+  <div class="card">
+    <b>Restaurant Marina</b><br>
+    🍽️ <span data-t="med">مطبخ متوسطي</span><br>
+    ⭐ 4.0 / 5<br>
+    <small data-t="marinaDesc">
+      أطباق متنوعة ومناسب للعائلات.
+    </small><br><br>
+    <button onclick="map(36.8803,6.9090)">📍 <span data-t="route">خارطة الطريق</span></button>
+  </div>
+</section>
+
+<section id="landmarks">
+  <h3>المعالم السياحية</h3>
+
+  <select id="country" onchange="selectCountry(this.value)">
+    <option value="">اختر البلد</option>
+    <option value="dz">الجزائر</option>
+    <option value="tn">تونس</option>
+    <option value="ma">المغرب</option>
+    <option value="eg">مصر</option>
+  </select>
+<select id="country" onchange="selectCountry(this.value)">
+    <option value="">الولاية</option>
+    <option value=>سكيكدة</option>
+    <option value=>عنابة</option>
+    <option value=>بجاية</option>
+</select>
+<select id="country" onchange="selectCountry(this.value)">
+      
+  <select id="state" onchange="selectState(this.value)"></select>
+  <div id="sites"></div> 
+</section>
+
+<div class="modal" id="login">
+  <div class="modal-content">
+    <h3 data-t="login">تسجيل الدخول</h3>
+    <input placeholder="اسم المستخدم"><br><br>
+    <input type="password" placeholder="كلمة المرور"><br><br>
+    <button data-t="loginBtn">دخول</button>
+    <button data-t="signupBtn">تسجيل جديد</button><br><br>
+    <button onclick="closeLogin()" data-t="close">إغلاق</button>
+  </div>
+</div>
+
+<div class="modal" id="sub">
+  <div class="modal-content">
+    <h3 data-t="sub">الاشتراك</h3>
+    <button data-t=>اختيار الخطة</button>
+     <button data-t=>ادخال المعلومات</button>
+     <button data-t=>طريقة الدفع</button>
+        </p>
+    <p><b><span data-t="price">السعر</span>: <span id="price">500 دج</span></b></p>
+    <button onclick="closeSub()" data-t="close">إغلاق</button>
+  </div>
+</div>
+
+<script>
+let speechText="";
+let currentLang="ar";
+
+const translations={
+ar:{
+upload:"تحميل صورة",scan:"مسح بالكاميرا",listen:"استمع",
+hotels:"فنادق",restaurants:"مطاعم",landmarks:"معالم",
+hotelsSkikda:"فنادق سكيكدة (حسب القرب)",
+restaurantsSkikda:"مطاعم سكيكدة (حسب القرب)",
+route:"خارطة الطريق",
+seafood:"مأكولات بحرية",med:"مطبخ متوسطي",
+login:"تسجيل الدخول",loginBtn:"دخول",signupBtn:"تسجيل جديد",
+close:"إغلاق",sub:"الاشتراك",price:"السعر",
+subSteps:"1- اختيار الخطة\n2- إدخال المعلومات\n3- الدفع",
+tulipDesc:"فندق عصري مطل على البحر، خدمات راقية وقريب من وسط المدينة.",
+safirDesc:"فندق مريح بأسعار مناسبة وقريب من الميناء.",
+corsaireDesc:"مطعم مشهور بالأسماك الطازجة وإطلالة بحرية.",
+marinaDesc:"أطباق متنوعة ومناسب للعائلات."
+},
+fr:{
+upload:"Importer image",scan:"Scanner",listen:"Écouter",
+hotels:"Hôtels",restaurants:"Restaurants",landmarks:"Monuments",
+hotelsSkikda:"Hôtels à Skikda (proximité)",
+restaurantsSkikda:"Restaurants à Skikda (proximité)",
+route:"Itinéraire",
+seafood:"Fruits de mer",med:"Cuisine méditerranéenne",
+login:"Connexion",loginBtn:"Entrer",signupBtn:"Inscription",
+close:"Fermer",sub:"Abonnement",price:"Prix",
+subSteps:"1- Choix du plan\n2- Informations\n3-Paiement",
+tulipDesc:"Hôtel moderne avec vue sur mer.",
+safirDesc:"Hôtel confortable proche du port.",
+corsaireDesc:"Restaurant réputé pour ses poissons.",
+marinaDesc:"Cuisine variée pour familles."
+},
+en:{
+upload:"Upload Image",scan:"Scan",listen:"Listen",
+hotels:"Hotels",restaurants:"Restaurants",landmarks:"Landmarks",
+hotelsSkikda:"Skikda Hotels (Nearby)",
+restaurantsSkikda:"Skikda Restaurants (Nearby)",
+route:"Directions",
+seafood:"Seafood",med:"Mediterranean cuisine",
+login:"Login",loginBtn:"Sign in",signupBtn:"Sign up",
+close:"Close",sub:"Subscription",price:"Price",
+subSteps:"1- Plan\n2- Info\n3- Payment",
+tulipDesc:"Modern seaside hotel.",
+safirDesc:"Comfortable hotel near port.",
+corsaireDesc:"Famous seafood restaurant.",
+marinaDesc:"Family-friendly restaurant."
+}
+};
+
+function setLang(l){
+currentLang=l;
+document.querySelectorAll("[data-t]").forEach(e=>{
+e.innerText=translations[l][e.dataset.t];
+});
+document.getElementById("price").innerText=(l==="ar")?"500 دج":"2 €";
+document.body.dir=(l==="ar")?"rtl":"ltr";
+}
+
+function toggleMenu(){dropdown.style.display=dropdown.style.display==="block"?"none":"block";}
+function showSection(id){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+dropdown.style.display="none";
+}
+function goHome(){showSection("home")}
+function openFile(){file.click()}
+function analyze(i){
+  let f = i.files[0];
+  if(!f) return;
+
+  // عرض الصورة
+  preview.src = URL.createObjectURL(f);
+  preview.style.display = "block";
+
+  let name = f.name.toLowerCase();
+
+  /* ====== بازيليك سان أوغستين ====== */
+  if(
+    name.includes("saint") ||
+    name.includes("augustin") ||
+    name.includes("basilica") ||
+    name.includes("augustine")
+  ){
+    speechText =
+    "بازيليك سان أوغستين بعنابة تُعد من أهم المعالم الدينية والتاريخية في الجزائر. " +
+    "شُيّدت في نهاية القرن التاسع عشر فوق تل يشرف على مدينة عنابة، تخليدًا للفيلسوف " +
+    "والقديس أوغستين أحد أبرز رموز الفكر المسيحي في شمال إفريقيا. " +
+    "تتميز البازيليك بطراز معماري يجمع بين الطابع البيزنطي والروماني، " +
+    "وتُعد اليوم موقعًا سياحيًا وثقافيًا يستقطب الزوار والباحثين من مختلف أنحاء العالم.";
+
+  /* ====== المسرح الروماني سكيكدة ====== */
+  }else if(
+    name.includes("المسرح") ||
+    name.includes("الروماني") ||
+      name.includes("سكيكدة")
+  ){
+speechText=
+    "المسرح الروماني بسكيكدة هو معلم أثري يعود إلى الحقبة الرومانية، " +
+    "حين كانت المدينة تُعرف باسم روسيكادا. " +
+    "كان المسرح مخصصًا للعروض المسرحية والاحتفالات العامة، " +
+    "ويعكس مدى التطور العمراني والثقافي الذي عرفته المنطقة في العهد الروماني. " +
+    "رغم تأثره بعوامل الزمن، لا يزال الموقع شاهدًا على العمق التاريخي لسكيكدة " +
+    "وأهميتها الحضارية عبر العصور.";
+
+}
+result.innerText=speechText;
+}
+function speak(){
+ speechSynthesis.speak(new SpeechSynthesisUtterance(currentText));
+}
+
+function map(a,b){window.open(`https://www.google.com/maps?q=${a},${b}`)}
+function state(v){
+if(v==="annaba") sites.innerHTML=`<button onclick="map(36.9,7.77)">بازيليك سان أوغستين</button>`;
+if(v==="skikda") sites.innerHTML=`<button onclick="map(36.87,6.9)">المسرح الروماني</button>`;
+}
+function openLogin(){login.style.display="block"}
+function closeLogin(){login.style.display="none"}
+function openSub(){sub.style.display="block"}
+function closeSub(){sub.style.display="none"}
+</script>
+
+</body>
+</html>
