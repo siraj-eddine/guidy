@@ -159,18 +159,17 @@ small{color:#555}
 </section>
 
 <section id="landmarks">
- <h3>المعالم السياحية</h3>
-
- <select id="country">
-  <option value="">اختر البلد</option>
+ <h3 data-t="touristicLandmarks">المعالم السياحية</h3>
+ <select id="country" onchange="onCountryChange()">
+  <option value="" data-t="chooseCountry">اختر البلد</option>
   <option value="DZ">الجزائر</option>
   <option value="TN">تونس</option>
   <option value="MA">المغرب</option>
   <option value="EG">مصر</option>
  </select>
 
- <select id="state">
-  <option value="">الولاية</option>
+ <select id="state" onchange="onStateChange()">
+  <option value="" data-t="chooseState">الولاية</option>
   <option value="skikda">سكيكدة</option>
   <option value="annaba">عنابة</option>
  </select>
@@ -192,18 +191,18 @@ small{color:#555}
 <div class="modal" id="sub">
  <div class="modal-content">
   <h3 data-t="sub">الاشتراك</h3>
-  <p>اختيار الخطة</p>
+  <p data-t="choosePlan">اختيار الخطة</p>
   <select>
-   <option>مجاني</option>
+   <option data-t="free">مجاني</option>
    <option>Premium</option>
   </select>
-  <p>إدخال المعلومات</p>
-  <p>طريقة الدفع</p>
+  <p data-t="enterInfo">إدخال المعلومات</p>
+  <p data-t="payment">طريقة الدفع</p>
   <select>
    <option>Visa</option>
    <option>PayPal</option>
   </select>
-  <button onclick="alert('تم الاشتراك بنجاح (محاكاة)')">تأكيد</button>
+  <button data-t="confirm">تأكيد</button>
   <p><b><span data-t="price">السعر</span>: <span id="price">500 دج</span></b></p>
   <button onclick="closeSub()" data-t="close">إغلاق</button>
  </div>
@@ -218,6 +217,7 @@ const login = document.getElementById("login");
 const sub = document.getElementById("sub");
 let speechText="";
 let currentLang="ar";
+let currentImageType = null; // basilica | theater
 
 const translations={
  ar:{
@@ -241,7 +241,15 @@ const translations={
   tulipDesc:"فندق عصري مطل على البحر، خدمات راقية وقريب من وسط المدينة.",
   safirDesc:"فندق مريح بأسعار مناسبة وقريب من الميناء.",
   corsaireDesc:"مطعم مشهور بالأسماك الطازجة وإطلالة بحرية.",
-  marinaDesc:"أطباق متنوعة ومناسب للعائلات."
+  marinaDesc:"أطباق متنوعة ومناسب للعائلات.",
+  touristicLandmarks:"المعالم السياحية",
+ chooseCountry:"اختر البلد",
+ chooseState:"اختر الولاية",
+ choosePlan:"اختيار الخطة",
+ free:"مجاني",
+ enterInfo:"إدخال المعلومات",
+ payment:"طريقة الدفع",
+ confirm:"تأكيد" 
  },
  fr:{
   upload:"Importer image",
@@ -260,7 +268,15 @@ const translations={
   signupBtn:"Inscription",
   close:"Fermer",
   sub:"Abonnement",
-  price:"Prix"
+  price:"Prix",
+  touristicLandmarks:"Sites touristiques",
+ chooseCountry:"Choisir le pays",
+ chooseState:"Choisir la wilaya",
+ choosePlan:"Choisir le plan",
+ free:"Gratuit",
+ enterInfo:"Entrer les informations",
+ payment:"Méthode de paiement",
+ confirm:"Confirmer"
  },
  en:{
   upload:"Upload Image",
@@ -279,18 +295,89 @@ const translations={
   signupBtn:"Sign up",
   close:"Close",
   sub:"Subscription",
-  price:"Price"
+  price:"Price",
+  touristicLandmarks:"Tourist Landmarks",
+ chooseCountry:"Choose country",
+ chooseState:"Choose state",
+ choosePlan:"Choose plan",
+ free:"Free",
+ enterInfo:"Enter information",
+ payment:"Payment method",
+ confirm:"Confirm"
+ }
+};
+const imageTexts = {
+ ar: {
+  basilica:
+   "يعود تاريخ بناء الكنيسة الكاثوليكية “أوغسطينوس بعنابة” لعام 1880م، واستمر إنجازها عشرين عامًا، إلى غاية تدشينها سنة 1900. "+
+   "ويسجل التاريخ فضل ذلك للكاردينال لا فيجري، الحاكم الفرنسي بالجزائر في تلك الفترة. "+
+   "وتولى عملية البناء مهندس يدعى ألباتي، الذي نجح في وضع مخطط معماري وفني رائع للكنيسة، "+
+   "جمع بين أساليب البناء المختلفة، ما جعلها صرحًا وقلعة تحمي مدينة هيبون من أعالي قمة هضبة بوخضرة. "+
+   "واستُعمل في بنائها الرخام الأبيض والمرمر الأحمر والخشب الصلب، "+
+   "ما جعل منها تحفة فنية ومعمارية مميزة.",
+
+  theater:
+   "بني المسرح الروماني بعد الاحتلال الروماني للمدينة أثناء حكم الإمبراطور هادريان، "+
+   "وتمت توسعته بهبة من إيميليوس بالتور. "+
+   "كان المسرح يتسع لـ 6000 متفرج، حيث كان أكبر من مسرحي تيمقاد وجميلة، "+
+   "ويُعتبر نسخة طبق الأصل عن مسرح لبدة في ليبيا. "+
+   "يتكون المسرح من خشبة (Scaena) وأوركسترا (Orchestra) ومدرجات (Cavea)، "+
+   "وأبواب وممرات علوية تؤدي إلى المدرجات، وأبواب تؤدي إلى المقصورات الفردية. "+
+   "وقد قام الإمبراطور هادريان بتزيين المسرح بتماثيل وأعمدة وتيجان كورنثية، "+
+   "ما أكسبه قيمة جمالية أكبر من باقي المسارح الرومانية."
+ },
+
+ fr: {
+  basilica:
+   "La basilique Saint-Augustin d’Annaba a été construite à partir de 1880 et achevée en 1900. "+
+   "Sa réalisation est attribuée au cardinal Lavigerie, gouverneur français de l’Algérie à cette époque. "+
+   "L’architecte Albert Ballu a conçu un chef-d'œuvre architectural combinant plusieurs styles. "+
+   "Construite en marbre blanc, marbre rouge et bois massif, la basilique domine l’ancienne Hippone "+
+   "depuis le sommet du plateau de Boukhdra et constitue un monument artistique exceptionnel.",
+
+  theater:
+   "Le théâtre romain de Skikda a été construit après l’occupation romaine sous le règne de l’empereur Hadrien. "+
+   "Il a été agrandi grâce à une donation d’Aemilius Balbus. "+
+   "Pouvant accueillir environ 6000 spectateurs, il était plus grand que ceux de Timgad et Djemila. "+
+   "Le théâtre comprend une scène, une orchestra, des gradins, ainsi que des galeries et couloirs supérieurs, "+
+   "et fut décoré de statues et de colonnes corinthiennes."
+ },
+
+ en: {
+  basilica:
+   "The Basilica of Saint Augustine in Annaba was built starting in 1880 and inaugurated in 1900. "+
+   "Its construction is credited to Cardinal Lavigerie, the French governor of Algeria at the time. "+
+   "Designed by architect Albert Ballu, the basilica combines several architectural styles. "+
+   "Built with white marble, red marble, and solid wood, it overlooks ancient Hippo from the Boukhdra plateau "+
+   "and stands as a remarkable architectural and artistic monument.",
+
+  theater:
+   "The Roman Theatre of Skikda was built after the Roman occupation during the reign of Emperor Hadrian. "+
+   "It was expanded thanks to a donation by Aemilius Balbus. "+
+   "With a capacity of about 6000 spectators, it was larger than the theatres of Timgad and Djemila. "+
+   "The structure includes a stage, orchestra, seating tiers, upper corridors, and was richly decorated "+
+   "with statues and Corinthian columns."
  }
 };
 
 function setLang(l){
- currentLang=l;
+ currentLang = l;
+
+ // تحديث النصوص الثابتة
  document.querySelectorAll("[data-t]").forEach(e=>{
-  e.innerText=translations[l][e.dataset.t];
+  e.innerText = translations[l][e.dataset.t];
  });
- document.getElementById("price").innerText=(l==="ar")?"500 دج":"2 €";
- document.body.dir=(l==="ar")?"rtl":"ltr";
+
+ // السعر
+ document.getElementById("price").innerText = (l==="ar") ? "500 دج" : "2 €";
+
+ // اتجاه الصفحة
+ document.body.dir = (l==="ar") ? "rtl" : "ltr";
+
+ // 🔑 السطر الحاسم (كان ناقصًا)
+ updateImageText();
 }
+
 
 function toggleMenu(){
  dropdown.style.display=dropdown.style.display==="block"?"none":"block";
@@ -305,39 +392,46 @@ function showSection(id){
 function openFile(){file.click()}
 
 function analyze(i){
- let f=i.files[0];
- if(!f)return;
+ let f = i.files[0];
+ if(!f) return;
 
- speechText = ""; // ← مهم جدًا
+ preview.src = URL.createObjectURL(f);
+ preview.style.display = "block";
 
- preview.src=URL.createObjectURL(f);
- preview.style.display="block";
+ let name = f.name.toLowerCase();
 
- let name=f.name.toLowerCase();
+ currentImageType = null;
 
- if(name.includes("saint")||name.includes("augustin")||name.includes("basilica")){
-  speechText =
-"يعود تاريخ بناء الكنيسة الكاثوليكية “أوغسطينوس بعنابة” لعام 1880م، واستمر إنجازها عشرين عامًا، إلى غاية تدشينها سنة 1900. "+
-"ويسجل التاريخ فضل ذلك للكاردينال لا فيجري، الحاكم الفرنسي بالجزائر في تلك الفترة. "+
-"وتولى عملية البناء مهندس يدعى ألباتي، الذي نجح في وضع مخطط معماري وفني رائع للكنيسة، "+
-"جمع بين أساليب البناء المختلفة، ما جعلها صرحًا وقلعة تحمي مدينة هيبون من أعالي قمة هضبة بوخضرة. "+
-"واستُعمل في بنائها الرخام الأبيض والمرمر الأحمر والخشب الصلب، "+
-"ما جعل منها تحفة فنية ومعمارية مميزة.";
+ if(
+  name.includes("saint") ||
+  name.includes("augustin") ||
+  name.includes("basilica")
+ ){
+  currentImageType = "basilica";
  }
- else if(name.includes("المسرح")||name.includes("الروماني")||name.includes("سكيكدة")){
-  speechText =
-"بني المسرح الروماني بعد الاحتلال الروماني للمدينة أثناء حكم الإمبراطور هادريان، "+
-"وتمت توسعته بهبة من إيميليوس بالتور. "+
-"كان المسرح يتسع لـ 6000 متفرج، حيث كان أكبر من مسرحي تيمقاد وجميلة، "+
-"ويُعتبر نسخة طبق الأصل عن مسرح لبدة في ليبيا. "+
-"يتكون المسرح من خشبة (Scaena) وأوركسترا (Orchestra) ومدرجات (Cavea)، "+
-"وأبواب وممرات علوية تؤدي إلى المدرجات، وأبواب تؤدي إلى المقصورات الفردية. "+
-"وقد قام الإمبراطور هادريان بتزيين المسرح بتماثيل وأعمدة وتيجان كورنثية، "+
-"ما أكسبه قيمة جمالية أكبر من باقي المسارح الرومانية.";
+ else if(
+  name.includes("المسرح") ||
+  name.includes("roman") ||
+  name.includes("theatre")
+ ){
+  currentImageType = "theater";
  }
 
- result.innerText=speechText;
+ updateImageText();
 }
+function updateImageText(){
+ // لا تعرض شيئًا إذا لم تُحمَّل صورة
+ if(!currentImageType || !preview.src || preview.style.display === "none"){
+  result.innerText = "";
+  speechText = "";
+  return;
+ }
+
+ speechText = imageTexts[currentLang][currentImageType];
+ result.innerText = speechText;
+}
+
+
 function speak(){
  if(!speechText) return;
 
@@ -379,6 +473,79 @@ function home(){
 
  // العودة للواجهة الرئيسية
  showSection('home');
+}
+const landmarksData = {
+ DZ: {
+  skikda: [
+   {
+    name: "المسرح الروماني بسكيكدة",
+    lat: 36.879,
+    lng: 6.907
+   }
+  ],
+  annaba: [
+   {
+    name: "كنيسة أوغسطينوس",
+    lat: 36.902,
+    lng: 7.755
+   }
+  ]
+ },
+ TN: {
+  tunis: [
+   { name: "قرطاج", lat: 36.852, lng: 10.323 }
+  ]
+ },
+ MA: {
+  rabat: [
+   { name: "صومعة حسان", lat: 34.020, lng: -6.822 }
+  ]
+ },
+ EG: {
+  cairo: [
+   { name: "الأهرامات", lat: 29.979, lng: 31.134 }
+  ]
+ }
+};
+
+function onCountryChange(){
+ const country = document.getElementById("country").value;
+ const state = document.getElementById("state");
+ const sites = document.getElementById("sites");
+
+ state.innerHTML = '<option value="">الولاية</option>';
+ sites.innerHTML = "";
+
+ if(!country || !landmarksData[country]) return;
+
+ Object.keys(landmarksData[country]).forEach(s=>{
+  const opt = document.createElement("option");
+  opt.value = s;
+  opt.textContent = s;
+  state.appendChild(opt);
+ });
+}
+
+function onStateChange(){
+ const country = document.getElementById("country").value;
+ const state = document.getElementById("state").value;
+ const sites = document.getElementById("sites");
+
+ sites.innerHTML = "";
+
+ if(!landmarksData[country] || !landmarksData[country][state]) return;
+
+ landmarksData[country][state].forEach(site=>{
+  const div = document.createElement("div");
+  div.className = "card";
+  div.innerHTML = `
+   <b>${site.name}</b><br><br>
+   <button onclick="map(${site.lat},${site.lng})">
+    📍 خارطة الطريق
+   </button>
+  `;
+  sites.appendChild(div);
+ });
 }
 </script>
 
